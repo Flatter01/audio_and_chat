@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "737959881013",
+    "project_id": "lesson-5243d",
+    "storage_bucket": "lesson-5243d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:737959881013:android:676980b25e206ac9a7447c",
+        "android_client_info": {
+          "package_name": "com.abdillox.firebase_lesson"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDiyvB5mXPZcpFurNs4drqfGqFjLwyweVQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
