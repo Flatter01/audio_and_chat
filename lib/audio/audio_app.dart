@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:audioplayers/audioplayers.dart';
 
 class AudioPlayerExample extends StatefulWidget {
   @override
@@ -15,7 +15,7 @@ class _AudioPlayerExampleState extends State<AudioPlayerExample> {
   final ValueNotifier<bool> isContainerVisibleNotifier = ValueNotifier(false);
 
   bool isVolumeVisible = false;
-  Duration? totalDuration = Duration.zero;
+  Duration totalDuration = Duration.zero;
   Duration currentPosition = Duration.zero;
   double volume = 0.5;
 
@@ -44,16 +44,20 @@ class _AudioPlayerExampleState extends State<AudioPlayerExample> {
   Future<void> _init() async {
     await _loadTrack();
 
-    _player.durationStream.listen((duration) {
+    _player.onDurationChanged.listen((duration) {
       setState(() {
-        totalDuration = duration ?? Duration.zero;
+        totalDuration = duration;
       });
     });
 
-    _player.positionStream.listen((position) {
+    _player.onPositionChanged.listen((position) {
       setState(() {
         currentPosition = position;
       });
+    });
+
+    _player.onPlayerComplete.listen((event) async {
+      await _playNextTrack();
     });
   }
 
@@ -88,12 +92,16 @@ class _AudioPlayerExampleState extends State<AudioPlayerExample> {
     try {
       final trackUrl = tracks[currentTrackIndex]['url']!;
       if (await _isTrackAvailable(trackUrl)) {
-        await _player.setUrl(trackUrl);
+        await _player.setSourceUrl(trackUrl);
         await _restorePosition(currentTrackIndex);
         await _player.setVolume(volume);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Не удалось загрузить трек: ${tracks[currentTrackIndex]['name']}')),
+          SnackBar(
+            content: Text(
+              'Не удалось загрузить трек: ${tracks[currentTrackIndex]['name']}',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -110,7 +118,7 @@ class _AudioPlayerExampleState extends State<AudioPlayerExample> {
     }
     await _loadTrack();
     if (isPlayingNotifier.value) {
-      await _player.play();
+      await _player.resume();
     }
   }
 
@@ -123,7 +131,7 @@ class _AudioPlayerExampleState extends State<AudioPlayerExample> {
     }
     await _loadTrack();
     if (isPlayingNotifier.value) {
-      await _player.play();
+      await _player.resume();
     }
   }
 
@@ -132,7 +140,7 @@ class _AudioPlayerExampleState extends State<AudioPlayerExample> {
       await _player.pause();
     } else {
       isContainerVisibleNotifier.value = true;
-      await _player.play();
+      await _player.resume();
     }
     isPlayingNotifier.value = !isPlayingNotifier.value;
   }
@@ -259,19 +267,14 @@ class _AudioPlayerExampleState extends State<AudioPlayerExample> {
                                         .toDouble()
                                         .clamp(
                                             0.0,
-                                            totalDuration?.inSeconds
-                                                    .toDouble() ??
-                                                0.0),
-                                    max: totalDuration?.inSeconds.toDouble() ??
-                                        1.0,
+                                            totalDuration.inSeconds
+                                                .toDouble()),
+                                    max: totalDuration.inSeconds.toDouble(),
                                     min: 0.0,
                                     onChanged: (value) async {
-                                      if (totalDuration != null &&
-                                          totalDuration != Duration.zero) {
-                                        final newPosition =
-                                            Duration(seconds: value.toInt());
-                                        await _player.seek(newPosition);
-                                      }
+                                      final newPosition =
+                                          Duration(seconds: value.toInt());
+                                      await _player.seek(newPosition);
                                     },
                                     activeColor: Colors.white,
                                     inactiveColor: Colors.grey,
